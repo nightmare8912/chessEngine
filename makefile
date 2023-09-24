@@ -1,2 +1,2 @@
 all:
-	gcc vince.c init.c -o vince
+	gcc vince.c init.c bitboards.c -o vince
