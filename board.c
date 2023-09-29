@@ -268,6 +268,10 @@ void ResetBoard(S_BOARD *pos)
         pos->bigPce[index] = 0;
         pos->majPce[index] = 0;
         pos->minPce[index] = 0;
+        pos->material[index] = 0;
+    }
+
+    for (index = 0; index < 3; ++index) {
         pos->pawns[index] = 0ULL;
     }
 
@@ -288,6 +292,8 @@ void ResetBoard(S_BOARD *pos)
     pos->castlePerm = 0;
 
     pos->posKey = 0ULL;
+    pos->PvTable->pTable = NULL;
+    InitPvTable(pos->PvTable);
 }
 
 // simply prints the board

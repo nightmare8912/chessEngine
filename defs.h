@@ -25,6 +25,9 @@ typedef unsigned long long U64;
 #define NAME "Vince 1.0"
 #define BRD_SQ_NUM 120
 #define MAXGAMEMOVES 2048 // half moves
+#define MAXPOSITIONMOVES 256 // max posible moves at a given position
+#define MAXDEPTH 64
+
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 
@@ -64,6 +67,21 @@ typedef struct {
 
 	int score; // used for move ordering
 } S_MOVE;
+
+typedef struct {
+	S_MOVE moves[MAXPOSITIONMOVES];
+	int count; // no of moves in that given position
+} S_MOVELIST;
+
+typedef struct {
+	U64 posKey;
+	int move;
+} S_PVENTRY;
+
+typedef struct {
+	S_PVENTRY *pTable;
+	int numEntries;
+} S_PVTABLE;	
 
 // for history of the game
 typedef struct {
@@ -106,10 +124,30 @@ typedef struct {
 	// piece list
 	int pList[13][10]; // 13 representing types of piece and 10 for extreme cases(eg 2 rook + 8 pawns that all promote to rook)
 	
+	S_PVTABLE PvTable[1]; // pointer(the table)
+	int PvArray[MAXDEPTH];
+
+	int searchHistory[13][BRD_SQ_NUM]; // every time a move improves on alpha
+	int searchKillers[2][MAXDEPTH]; // moves that caused a beta cutoff
+	
 }S_BOARD;
 
-/* GAME MOVE */
+typedef struct {
 
+	int startTime;
+	int stopTime;
+	int depth;
+	int depthSet;
+	int timeSet;
+	int movesToGo;
+	int infinite; // if true, search won't be stopped until gui sends stop command
+
+	long nodes;
+
+	int quit;
+	int stopped;
+
+} S_SEARCHINFO;
 
 /* MACROS */
 
@@ -127,15 +165,19 @@ typedef struct {
 #define IsKn(p) (PieceKnight[(p)]) // is the piece a Knight
 #define IsKi(p) (PieceKing[(p)]) // is the piece a king
 
+/* MACROS THAT HELP DECODE GAME MOVE */
+
 #define FROMSQ(m) ((m) & 0x7F)
 #define TOSQ(m) (((m) >> 7) & 0x7F)
 #define CAPTURED(m) (((m) >> 14) &0xF)
 #define PROMOTED(m) (((m) >> 20) & 0xF)
 #define MFLAGEP 0x40000 // enpassant
 #define MFLAGPS 0x80000 // pawn start
-#define MFFLAGCA 0x1000000 // castling
+#define MFLAGCA 0x1000000 // castling
 #define MFLAGCAP 0x7C000 // captures in that move -> 0000 0000 0111 1100 0000 0000 0000 (we've to include en-passant) -> corresponding hexadecimal ->0x7C000
 #define MFLAGPROM 0xF00000
+
+#define NOMOVE 0
 
 /* GLOBALS */
 
@@ -160,10 +202,12 @@ extern int PieceCol[13];
 extern int FilesBrd[BRD_SQ_NUM];
 extern int RanksBrd[BRD_SQ_NUM];
 
+extern int PiecePawn[13];
 extern int PieceKnight[13];
 extern int PieceKing[13];
 extern int PieceRookQueen[13];
 extern int PieceBishopQueen[13];
+extern int PieceSlides[13];
 
 /* FUNCTIONS */
 
@@ -191,5 +235,44 @@ extern int SqAttacked(const int sq, const int side, const S_BOARD *pos);
 // io.c
 extern char *PrMove(const int move);
 extern char *PrSq(const int sq);
+extern void PrintMoveList(const S_MOVELIST *list);
+extern int ParseMove(char *ptrChar, S_BOARD *pos);
+
+// validate.c
+extern int SqOnBoard(const int sq);
+extern int SideValid(const int side);
+extern int FileRankValid(const int fr);
+extern int PieceValidEmpty(const int pce);
+extern int PieceValid(const int pce);
+extern int MoveListOk(const S_MOVELIST *list,  const S_BOARD *pos);
+
+// movegen.c
+extern void GenerateAllMoves(const S_BOARD *pos, S_MOVELIST *list);
+extern int MoveExists(S_BOARD *pos, const int move);
+
+// makemove.c
+extern void TakeMove(S_BOARD *pos);
+extern int MakeMove(S_BOARD *pos, int move);
+
+// perft.c
+extern void PerftTest(int depth, S_BOARD *pos);
+
+// search.c
+extern 	void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info);
+// extern int IsRepitition(const S_BOARD *pos);
+
+// misc.c
+// extern void SearchPosition(S_BOARD *pos);
+extern int GetTimeMs();
+
+// pvtable.c
+extern void InitPvTable(S_PVTABLE *table);
+extern void StorePvMove(const S_BOARD *pos, const int move);
+extern int ProbePvTable(const S_BOARD *pos);
+extern int GetPvLine(const int depth, S_BOARD *pos);
+extern void ClearPvTable(S_PVTABLE *table);
+
+// evaluate.c
+extern int EvalPosition(const S_BOARD *pos);
 
 #endif
