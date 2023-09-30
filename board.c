@@ -144,7 +144,7 @@ int ParseFen(char *fen, S_BOARD *pos)
     ASSERT(fen != NULL);
     ASSERT(pos != NULL);
 
-    printf("Fen notation: %s\n", fen);
+    // printf("Fen notation: %s\n", fen);
 
     int rank = RANK_8;
     int file = FILE_A;
@@ -234,7 +234,7 @@ int ParseFen(char *fen, S_BOARD *pos)
         fen++;
     }
 
-    printf(fen);
+    // printf(fen);
 
     ASSERT(*fen == 'w' || *fen == 'b');
 

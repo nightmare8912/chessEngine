@@ -23,6 +23,74 @@ U64 CastleKeys[16];
 int FilesBrd[BRD_SQ_NUM];
 int RanksBrd[BRD_SQ_NUM]; // these two arrays will store the value of the files and rank for corresponding array 120 index
 
+U64 FileBBMask[8];
+U64 RankBBMask[8]; // bb = bitboard	
+
+U64 BlackPassedMask[64];
+U64 WhitePassedMask[64];
+U64 IsolatedMask[64];
+
+/*
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 x 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0 
+
+	to check if x is passed pawn -> we take following bit board
+
+	0 0 0 1 1 1 0 0
+	0 0 0 1 1 1 0 0
+	0 0 0 1 1 1 0 0
+	0 0 0 1 1 1 0 0
+	0 0 0 1 1 1 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0 
+
+	now we perform and between them, and if result is zero-> it is a passed pawn
+
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0 
+
+*/
+
+// this function sets up the rows and columns of bitboards to 1's so that we can use them to detect passed pawns at a later stage
+void InitEvalMasks() {
+	
+	int sq, tsq, r, f;
+
+	for (sq = 0; sq < 8; sq++) {
+		FileBBMask[sq] = 0ULL;
+		RankBBMask[sq] = 0ULL;
+	}
+
+	for (r = RANK_8; r >= RANK_1; r--) {
+		for (f = FILE_A; f <= FILE_H; f++) {
+			sq = r * 8 + f;
+			FileBBMask[f] |= (1ULL << sq);
+			RankBBMask[r] |= (1ULL << sq);
+		}
+	}
+
+	// for (r = RANK_8; r >= RANK_1; r--) {
+	// 	PrintBitBoard(RankBBMask[r]);
+	// }
+
+	// for (f = FILE_A; f <= FILE_H; f++) {
+	// 	PrintBitBoard(FileBBMask[f]);
+	// }
+}
+
 void InitFilesRanksBrd()
 {
 	int index = 0;
@@ -115,5 +183,6 @@ void AllInit()
 	InitBitMask();
 	InitHashKeys();
 	InitFilesRanksBrd();
+	InitEvalMasks();
 	InitMvvLva();
 }

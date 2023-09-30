@@ -181,7 +181,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 	info->nodes++;
 
-	if (IsRepitition(pos) || pos->fiftyMove >= 100)
+	if ((IsRepitition(pos) || pos->fiftyMove >= 100) && pos->ply)
 	{
 		return 0;
 	}
@@ -189,6 +189,12 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 	if (pos->ply > MAXDEPTH - 1)
 	{
 		return EvalPosition(pos);
+	}
+
+	int InCheck = SqAttacked(pos->KingSq[pos->side], pos->side ^ 1, pos);
+
+	if (InCheck == TRUE) {
+		depth++;
 	}
 
 	S_MOVELIST list[1];
@@ -258,7 +264,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 	if (Legal == 0)
 	{
-		if (SqAttacked(pos->KingSq[pos->side], pos->side ^ 1, pos))
+		if (InCheck)
 		{
 			// check mate
 			return -MATE + pos->ply; // mate in 5 or 6, can be used to extract in how many steps are we getting mated
@@ -304,17 +310,40 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info)
 		pvMoves = GetPvLine(currentDepth, pos);
 		bestMove = pos->PvArray[0];
 
-		printf("info score cp %d depth %d nodes %ld time %d ", bestScore, currentDepth, info->nodes, GetTimeMs() - info->startTime);
-
-		pvMoves = GetPvLine(currentDepth, pos);
-		printf("pv");
-
-		for (pvNum = 0; pvNum < pvMoves; ++pvNum)
-		{
-			printf(" %s", PrMove(pos->PvArray[pvNum]));
+		// pvMoves = GetPvLine(currentDepth, pos);
+		if (info->GAME_MODE == UCIMODE) {
+			printf("info score cp %d depth %d nodes %ld time %d ", bestScore, currentDepth, info->nodes, GetTimeMs() - info->startTime);
 		}
-		printf("\n");
-		printf("Ordering: %.2f\n", (info->fhf / info->fh));
+
+		else if (info->GAME_MODE == XBOARDMODE && info->POST_THINKING == TRUE) {
+			printf("%d %d %d %ld ", currentDepth, bestScore, (GetTimeMs() - info->startTime) / 10, info->nodes);
+		}
+
+		else if (info->POST_THINKING == TRUE) {
+			printf("score cp %d depth %d nodes %ld time %d ", bestScore, currentDepth, info->nodes, GetTimeMs() - info->startTime);
+		}
+
+		if (info->GAME_MODE == UCIMODE || info->POST_THINKING == TRUE) {
+			pvMoves = GetPvLine(currentDepth, pos);
+			printf("pv");
+			for (pvNum = 0; pvNum < pvMoves; ++pvNum)
+			{
+				printf(" %s", PrMove(pos->PvArray[pvNum]));
+			}
+			printf("\n");
+			printf("Ordering: %.2f\n", (info->fhf / info->fh));
+		}
 	}
-	printf("bestmove %s\n", PrMove(bestMove));
+	if (info->GAME_MODE == UCIMODE){
+		printf("bestmove %s\n", PrMove(bestMove));
+	}
+	else if (info->GAME_MODE == XBOARDMODE) {
+		printf("move %s\n", PrMove(bestMove));
+		MakeMove(pos, bestMove);
+	}
+	else {
+		printf("\n\n***!!Vince makes move %s !!***\n\n", PrMove(bestMove));
+		MakeMove(pos, bestMove);
+		PrintBoard(pos);
+	}
 }
