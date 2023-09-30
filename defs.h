@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DEBUG
+// #define DEBUG
 
 #ifndef DEBUG
 #define ASSERT(n)
@@ -147,6 +147,9 @@ typedef struct {
 	int quit;
 	int stopped;
 
+	float fh; // fail high
+	float fhf;  // fail high first
+
 } S_SEARCHINFO;
 
 /* MACROS */
@@ -248,7 +251,9 @@ extern int MoveListOk(const S_MOVELIST *list,  const S_BOARD *pos);
 
 // movegen.c
 extern void GenerateAllMoves(const S_BOARD *pos, S_MOVELIST *list);
+extern void GenerateAllCaps(const S_BOARD *pos, S_MOVELIST *list);
 extern int MoveExists(S_BOARD *pos, const int move);
+extern void InitMvvLva();
 
 // makemove.c
 extern void TakeMove(S_BOARD *pos);
@@ -264,6 +269,7 @@ extern 	void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info);
 // misc.c
 // extern void SearchPosition(S_BOARD *pos);
 extern int GetTimeMs();
+extern void ReadInput(S_SEARCHINFO *info);
 
 // pvtable.c
 extern void InitPvTable(S_PVTABLE *table);
@@ -274,5 +280,8 @@ extern void ClearPvTable(S_PVTABLE *table);
 
 // evaluate.c
 extern int EvalPosition(const S_BOARD *pos);
+
+// uci.c
+extern void Uci_Loop();
 
 #endif

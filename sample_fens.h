@@ -14,3 +14,5 @@
 #define FEN14 "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1"
 #define FEN15 "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - "
 #define FEN16 "n1n5/PPPk4/8/8/8/8/4Kppp/5N1N w - - 0 1"
+#define FEN17 "2rr3k/pp3pp1/1nnqbN1p/3pN3/2pP4/2P3Q1/PPB4P/R4RK1 w - -"
+#define FEN18 "r1b1k2r/ppppnppp/2n2q2/2b5/3NP3/2P1B3/PP3PPP/RN1QKB1R w KQkq - 0 1"

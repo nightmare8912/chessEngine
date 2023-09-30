@@ -52,7 +52,6 @@ void InitPvTable(S_PVTABLE *table) {
         free(table->pTable); // free if any memory is pointed
     }
     table->pTable = (S_PVENTRY *) malloc (table->numEntries * sizeof(S_PVENTRY));
-    // printf("Size of table: %d\n", sizeof(table->pTable));
     ClearPvTable(table);
     printf("PvTableInit completed with %d entries\n", table->numEntries);
 }
