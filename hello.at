@@ -57,8 +57,8 @@ FCHdir=
 FCHnames=
 [Data]
 LastPGNEPDindex=1
-LastGameDate=2023.10.01
-LastGameTime=19:28:24
+LastGameDate=2023.10.02
+LastGameTime=01:59:03
 Country=India
 Site=PRATYUSH
 Hardware=AMD Ryzen 5 5500U with Radeon Graphics with 7.4 GB Memory
@@ -70,6 +70,8 @@ FirstGameDate=2023.10.01
 FirstGameTime=19:17:00
 [PairingResults]
 Vince ------ Vince2=00?
+Vince12 ------ Vince2=?
+Vince ------ VinceThreaded12=?
 [Participants]
-Engine1=Vince2
+Engine1=VinceThreaded12
 Engine2=Vince

@@ -11,6 +11,7 @@ int main(int argc, char *argv[])
     S_SEARCHINFO info[1];
     // InitPvTable(pos->PvTable);
 	info->quit = FALSE;
+	info->threadNum = 4;
 	HashTable->pTable = NULL;
 	InitHashTable(HashTable, 16);
 
@@ -25,6 +26,10 @@ int main(int argc, char *argv[])
 			printf("Book off!\n");
 		}
 	}
+
+	// TempHashTest(FEN18);
+	// TempHashTest(FEN4);
+	// exit(0);
 
 	while(TRUE) {
 		memset(&line[0], 0, sizeof(line));
@@ -41,11 +46,11 @@ int main(int argc, char *argv[])
 			if (info->quit == TRUE) break;
 			continue;
 		}
-		else if (!strncmp(line, "xboard", 6)) {
-			XBOARD_Loop(pos, info);
-			if (info->quit == TRUE) break;
-			continue;
-		}
+		// else if (!strncmp(line, "xboard", 6)) {
+		// 	XBOARD_Loop(pos, info);
+		// 	if (info->quit == TRUE) break;
+		// 	continue;
+		// }
 		else if (!strncmp(line, "vince", 5)) {
 			Console_Loop(pos, info);
 			if (info->quit == TRUE) break;

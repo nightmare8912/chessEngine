@@ -23,145 +23,53 @@
 
 typedef unsigned long long U64;
 
-#define NAME "Vince 1.0"
+#define NAME "Vince 1.2"
 #define BRD_SQ_NUM 120
+
 #define MAXGAMEMOVES 2048	 // half moves
 #define MAXPOSITIONMOVES 256 // max posible moves at a given position
 #define MAXDEPTH 64
+#define MAXTHREADS 32
 
-#define INF_BOUND 30000
-#define MATE 29000
-#define ISMATE (INF_BOUND - MAXDEPTH)
+#define INF_BOUND 32000
+#define AB_BOUND 30000
+#define ISMATE (AB_BOUND - MAXDEPTH)
 
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 enum
 {
-	EMPTY,
-	wP,
-	wN,
-	wB,
-	wR,
-	wQ,
-	wK,
-	bP,
-	bN,
-	bB,
-	bR,
-	bQ,
-	bK
+	EMPTY, wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK
 };
 enum
-{
-	FILE_A,
-	FILE_B,
-	FILE_C,
-	FILE_D,
-	FILE_E,
-	FILE_F,
-	FILE_G,
-	FILE_H,
-	FILE_NONE
+{ 	FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, FILE_NONE
 };
 enum
-{
-	RANK_1,
-	RANK_2,
-	RANK_3,
-	RANK_4,
-	RANK_5,
-	RANK_6,
-	RANK_7,
-	RANK_8,
-	RANK_NONE
+{   RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_NONE
 };
 enum
-{
-	WHITE,
-	BLACK,
-	BOTH
+{	WHITE, BLACK, BOTH
 };
 enum
-{
-	UCIMODE,
-	XBOARDMODE,
-	CONSOLEMODE
+{ 	UCIMODE, XBOARDMODE, CONSOLEMODE
 };
 
 enum
 {
-	A1 = 21,
-	B1,
-	C1,
-	D1,
-	E1,
-	F1,
-	G1,
-	H1,
-	A2 = 31,
-	B2,
-	C2,
-	D2,
-	E2,
-	F2,
-	G2,
-	H2,
-	A3 = 41,
-	B3,
-	C3,
-	D3,
-	E3,
-	F3,
-	G3,
-	H3,
-	A4 = 51,
-	B4,
-	C4,
-	D4,
-	E4,
-	F4,
-	G4,
-	H4,
-	A5 = 61,
-	B5,
-	C5,
-	D5,
-	E5,
-	F5,
-	G5,
-	H5,
-	A6 = 71,
-	B6,
-	C6,
-	D6,
-	E6,
-	F6,
-	G6,
-	H6,
-	A7 = 81,
-	B7,
-	C7,
-	D7,
-	E7,
-	F7,
-	G7,
-	H7,
-	A8 = 91,
-	B8,
-	C8,
-	D8,
-	E8,
-	F8,
-	G8,
-	H8,
-	NO_SQ,
-	OFFBOARD
+	A1 = 21, B1, C1, D1, E1, F1, G1, H1,
+	A2 = 31, B2, C2, D2, E2, F2, G2, H2,
+	A3 = 41, B3, C3, D3, E3, F3, G3, H3,
+	A4 = 51, B4, C4, D4, E4, F4, G4, H4,
+	A5 = 61, B5, C5, D5, E5, F5, G5, H5,
+	A6 = 71, B6, C6, D6, E6, F6, G6, H6,
+	A7 = 81, B7, C7, D7, E7, F7, G7, H7,
+	A8 = 91, B8, C8, D8, E8, F8, G8, H8,
+	NO_SQ,	OFFBOARD
 };
 
 enum
 {
-	FALSE,
-	TRUE
+	FALSE, TRUE
 };
 
 // castling permissions
@@ -206,12 +114,14 @@ enum
 
 typedef struct
 {
-	U64 posKey;
-	int move;
-	int score;
-	int depth;
-	int flags;
+	// U64 posKey;
+	// int move;
+	// int score;
+	// int depth;
+	// int flags;
 	int age;
+	U64 smp_data;
+	U64 smp_key; // position key xored with the data
 } S_HASHENTRY;
 
 typedef struct
@@ -309,6 +219,9 @@ typedef struct
 
 	int GAME_MODE;
 	int POST_THINKING;
+
+	int threadNum; 
+
 } S_SEARCHINFO;
 
 typedef struct
@@ -323,6 +236,16 @@ typedef struct
 	S_BOARD *originalPosition;
 	S_HASHTABLE *ttable;
 } S_SEARCH_THREAD_DATA;
+
+typedef struct {
+	S_BOARD *pos;
+	S_SEARCHINFO *info;
+	S_HASHTABLE *ttable;
+
+	int threadNumber;
+	int depth;
+	int bestMove;
+} S_SEARCH_WORKER_DATA;
 
 /* MACROS */
 
@@ -460,7 +383,7 @@ extern int SearchPositionThread(void *data);
 // misc.c
 // extern void SearchPosition(S_BOARD *pos);
 extern int GetTimeMs();
-extern void ReadInput(S_SEARCHINFO *info);
+// extern void ReadInput(S_SEARCHINFO *info);
 
 // pvtable.c
 extern void InitPvTable(S_PVTABLE *table);
@@ -472,6 +395,9 @@ extern void StoreHashEntry(S_BOARD *pos, S_HASHTABLE *table, const int move, int
 extern int ProbeHashEntry(S_BOARD *pos, S_HASHTABLE *table, int *move, int *score, int alpha, int beta, int depth);
 extern void InitHashTable(S_HASHTABLE *table, int sizeInMb);
 extern void ClearHashTable(S_HASHTABLE *table);
+extern void TempHashTest(char *fen);
+
+
 // evaluate.c
 extern int EvalPosition(const S_BOARD *pos);
 extern int Mirror64[64];

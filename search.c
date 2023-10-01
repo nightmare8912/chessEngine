@@ -3,6 +3,12 @@
 #include <stdio.h>
 #include <string.h>
 #include "defs.h"
+#include "tinycthread.h"
+
+int rootDepth;
+thrd_t workerThreads[MAXTHREADS];
+
+void SearchPositionMultiThreading(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table);
 
 static void CheckUp(S_SEARCHINFO *info)
 {
@@ -128,7 +134,7 @@ static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info)
 	int Legal = 0; // number of legal moves possible, in checkmate or stalemate it is zero
 	// int OldAlpha = alpha;
 	// int BestMove = NOMOVE;
-	Score = -INF_BOUND;
+	Score = -AB_BOUND;
 
 	for (MoveNum = 0; MoveNum < list->count; ++MoveNum)
 	{
@@ -207,7 +213,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		depth++;
 	}
 
-	int Score = -INF_BOUND;
+	int Score = -AB_BOUND;
 	int PvMove = NOMOVE;
 
 	if (ProbeHashEntry(pos, table, &PvMove, &Score, alpha, beta, depth) == TRUE)
@@ -238,9 +244,9 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 	int Legal = 0; // number of legal moves possible, in checkmate or stalemate it is zero
 	int OldAlpha = alpha;
 	int BestMove = NOMOVE;
-	int BestScore = -INF_BOUND;
+	int BestScore = -AB_BOUND;
 
-	Score = -INF_BOUND;
+	Score = -AB_BOUND;
 
 	if (PvMove != NOMOVE)
 	{
@@ -313,7 +319,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		if (InCheck)
 		{
 			// check mate
-			return -INF_BOUND + pos->ply; // mate in 5 or 6, can be used to extract in how many steps are we getting mated
+			return -AB_BOUND + pos->ply; // mate in 5 or 6, can be used to extract in how many steps are we getting mated
 		}
 		else
 		{
@@ -342,11 +348,109 @@ int SearchPositionThread(void *data) {
 	memcpy(pos, searchData->originalPosition, sizeof(S_BOARD));
 	// we need a complete new copy of the board as each of the thread will be manipulating the board differently
 	// whereas info and HashTable will be the same for all of them
-	SearchPosition(pos, searchData->info, searchData->ttable);
+	SearchPositionMultiThreading(pos, searchData->info, searchData->ttable);
 	free(pos);
-	printf("Freed!\n");
+	// printf("Freed!\n");
 	return 0;
 }
+
+void IterativeDeepen(S_SEARCH_WORKER_DATA *workerData) {
+	
+	workerData->bestMove = NOMOVE;
+	int bestScore = -AB_BOUND;
+	int currentDepth = 0;
+	int pvMoves = 0;
+	int pvNum = 0;
+
+
+	for (currentDepth = 1; currentDepth <= workerData->info->depth; ++currentDepth)
+	{
+		rootDepth = currentDepth;
+		bestScore = AlphaBeta(-AB_BOUND, AB_BOUND, currentDepth, workerData->pos, workerData->info, workerData->ttable, TRUE);
+
+		if (workerData->info->stopped == TRUE)
+		{
+			break;
+		}
+
+		if (workerData->threadNumber == 0) {
+			pvMoves = GetPvLine(currentDepth, workerData->pos, workerData->ttable);
+			workerData->bestMove = workerData->pos->PvArray[0];
+
+			printf("info score cp %d depth %d nodes %ld time %d ", 
+			bestScore, currentDepth, workerData->info->nodes, GetTimeMs() - workerData->info->startTime);
+
+			printf("pv");
+			for (pvNum = 0; pvNum < pvMoves; ++pvNum)
+			{
+				printf(" %s", PrMove(workerData->pos->PvArray[pvNum]));
+			}
+			printf("\n");
+			printf("Ordering: %.2f\n", (workerData->info->fhf / workerData->info->fh));
+		}		
+	}
+}
+
+int StartWorkerThread(void *data) {
+	S_SEARCH_WORKER_DATA *workerData = (S_SEARCH_WORKER_DATA *)data;
+	// printf("Thread %d starts\n", workerData->threadNumber);
+	IterativeDeepen(workerData);
+	// printf("Thread %d ends\n", workerData->threadNumber);
+		if (workerData->threadNumber == 0) {/*last thread ends*/
+			if (workerData->info->GAME_MODE == UCIMODE)
+			{
+				printf("bestmove %s\n", PrMove(workerData->bestMove));
+			}
+			// else if (workerData->info->GAME_MODE == XBOARDMODE)
+			// {
+			// 	printf("move %s\n", PrMove(workerData->bestMove));
+			// 	MakeMove(pos, bestMove);
+			// }
+			// else
+			// {
+			// 	printf("\n\n***!!Vince makes move %s !!***\n\n", PrMove(bestMove));
+			// 	MakeMove(pos, bestMove);
+			// 	PrintBoard(pos);
+			// }
+	}
+	free(workerData);
+}
+
+void SetUpWorker(int threadNum, thrd_t *workerTh, S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
+	S_SEARCH_WORKER_DATA *pWorkerData = (S_SEARCH_WORKER_DATA *) malloc (sizeof(S_SEARCH_WORKER_DATA));
+	pWorkerData->pos = malloc(sizeof(S_BOARD));
+	memcpy(pWorkerData->pos, pos, sizeof(S_BOARD));
+	pWorkerData->info = info;
+	pWorkerData->ttable = table;
+	pWorkerData->threadNumber = threadNum;
+	thrd_create(workerTh, &StartWorkerThread, (void *)pWorkerData);
+}
+
+void CreateSearchWorkers(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
+	
+	printf("Create search workers: %d\n", info->threadNum);
+	for (int i = 0; i < info->threadNum; ++i) {
+		SetUpWorker(i, &workerThreads[i], pos, info, table);
+	}
+}
+
+void SearchPositionMultiThreading(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table)
+{
+	int bestMove = NOMOVE;
+	ClearForSearch(pos, info, table);
+
+	if (EngineOptions->UseBook == TRUE) {
+		bestMove = GetBookMove(pos);
+	}
+
+	if (bestMove == NOMOVE) {
+		CreateSearchWorkers(pos, info, table);
+	}
+	for (int i = 0; i < info->threadNum; i++) {
+		thrd_join(workerThreads[i], NULL);
+	}
+}
+
 
 
 void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table)
@@ -357,7 +461,7 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table)
 	// goto next depth
 
 	int bestMove = NOMOVE;
-	int bestScore = -INF_BOUND;
+	int bestScore = -AB_BOUND;
 	int currentDepth = 0;
 	int pvMoves = 0;
 	int pvNum = 0;
@@ -372,7 +476,7 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table)
 
 		for (currentDepth = 1; currentDepth <= info->depth; ++currentDepth)
 		{
-			bestScore = AlphaBeta(-INF_BOUND, INF_BOUND, currentDepth, pos, info, table, TRUE);
+			bestScore = AlphaBeta(-AB_BOUND, AB_BOUND, currentDepth, pos, info, table, TRUE);
 
 			if (info->stopped == TRUE)
 			{
@@ -428,3 +532,4 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table)
 		PrintBoard(pos);
 	}
 }
+

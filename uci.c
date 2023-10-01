@@ -4,6 +4,7 @@
 #include <string.h>
 #include "defs.h"
 #include "tinycthread.h"
+#include "sample_fens.h"
 
 #define INPUTBUFFER 400 * 6
 
@@ -157,10 +158,6 @@ void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info)
     setbuf(stdin, NULL);
     setbuf(stdout, NULL);
 
-    // 
-
-    EngineOptions->UseBook = FALSE;
-
     char line[INPUTBUFFER];
 
     printf("id name %s\n", NAME);
@@ -201,7 +198,7 @@ void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info)
         }
         else if (!strncmp(line, "run", 3))
         {
-            ParseFen(START_FEN, pos);
+            ParseFen(FEN18, pos);
             ParseGo("go infinite", info, pos, HashTable);
         }
         else if (!strncmp(line, "quit", 4))
