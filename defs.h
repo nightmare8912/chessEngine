@@ -28,6 +28,10 @@ typedef unsigned long long U64;
 #define MAXPOSITIONMOVES 256 // max posible moves at a given position
 #define MAXDEPTH 64
 
+#define INFINITE 30000
+#define MATE 29000
+#define ISMATE (INFINITE - MAXDEPTH)
+
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 
@@ -74,6 +78,25 @@ typedef struct {
 	int count; // no of moves in that given position
 } S_MOVELIST;
 
+enum {HFNONE, HFALPHA, HFBETA, HFEXACT};
+
+typedef struct {
+	U64 posKey;
+	int move;
+	int score;
+	int depth;
+	int flags;
+} S_HASHENTRY;
+
+typedef struct {
+	S_HASHENTRY *pTable;
+	int numEntries;
+	int newWrite;
+	int overWrite;
+	int hit;
+	int cut;
+} S_HASHTABLE;
+
 typedef struct {
 	U64 posKey;
 	int move;
@@ -93,7 +116,7 @@ typedef struct {
 	int fiftyMove;
 	U64 posKey;
 
-}S_UNDO;
+} S_UNDO;
 
 typedef struct {
 	
@@ -130,8 +153,10 @@ typedef struct {
 
 	int searchHistory[13][BRD_SQ_NUM]; // every time a move improves on alpha
 	int searchKillers[2][MAXDEPTH]; // moves that caused a beta cutoff
+
+	S_HASHTABLE HashTable[1];
 	
-}S_BOARD;
+} S_BOARD;
 
 typedef struct {
 
@@ -153,8 +178,11 @@ typedef struct {
 
 	int GAME_MODE;
 	int POST_THINKING;
-
 } S_SEARCHINFO;
+
+typedef struct {
+	int UseBook;
+} S_OPTIONS;
 
 /* MACROS */
 
@@ -166,6 +194,8 @@ typedef struct {
 #define CNT(b) CountBits(b)
 #define CLRBIT(bb, sq) ((bb) &= ClearMask[(sq)])
 #define SETBIT(bb,sq) ((bb) |= SetMask[(sq)])
+
+#define MIRROR64(sq) (Mirror64[(sq)])
 
 #define IsBQ(p) (PieceBishopQueen[(p)]) // is the piece a bishop or a queen
 #define IsRQ(p) (PieceRookQueen[(p)]) // is the piece a rook or a queen
@@ -216,6 +246,15 @@ extern int PieceRookQueen[13];
 extern int PieceBishopQueen[13];
 extern int PieceSlides[13];
 
+extern U64 FileBBMask[8];
+extern U64 RankBBMask[8]; // bb = bitboard	
+
+extern U64 BlackPassedMask[64];
+extern U64 WhitePassedMask[64];
+extern U64 IsolatedMask[64];
+
+extern S_OPTIONS EngineOptions[1];
+
 /* FUNCTIONS */
 
 // init.c
@@ -235,6 +274,7 @@ extern int ParseFen(char *fen, S_BOARD *pos);
 extern void PrintBoard(const S_BOARD *pos);
 extern void UpdateListsMaterial(S_BOARD *pos);
 extern int CheckBoard(const S_BOARD *pos);
+extern void MirrorBoard(S_BOARD *pos);
 
 // attack.c
 extern int SqAttacked(const int sq, const int side, const S_BOARD *pos);
@@ -252,6 +292,8 @@ extern int FileRankValid(const int fr);
 extern int PieceValidEmpty(const int pce);
 extern int PieceValid(const int pce);
 extern int MoveListOk(const S_MOVELIST *list,  const S_BOARD *pos);
+extern void MirrorEvalTest(S_BOARD *pos);
+extern void DebugAnalysisTest(S_BOARD *pos, S_SEARCHINFO *info);
 
 // movegen.c
 extern void GenerateAllMoves(const S_BOARD *pos, S_MOVELIST *list);
@@ -262,6 +304,8 @@ extern void InitMvvLva();
 // makemove.c
 extern void TakeMove(S_BOARD *pos);
 extern int MakeMove(S_BOARD *pos, int move);
+extern void TakeNullMove(S_BOARD *pos);
+extern void MakeNullMove(S_BOARD *pos);
 
 // perft.c
 extern void PerftTest(int depth, S_BOARD *pos);
@@ -278,12 +322,16 @@ extern void ReadInput(S_SEARCHINFO *info);
 // pvtable.c
 extern void InitPvTable(S_PVTABLE *table);
 extern void StorePvMove(const S_BOARD *pos, const int move);
-extern int ProbePvTable(const S_BOARD *pos);
+int ProbePvMove(const S_BOARD *pos);
 extern int GetPvLine(const int depth, S_BOARD *pos);
 extern void ClearPvTable(S_PVTABLE *table);
-
+extern void StoreHashEntry(S_BOARD *pos, const int move, int score, const int flags, const int depth);
+extern int ProbeHashEntry(S_BOARD *pos, int *move, int *score, int alpha, int beta, int depth);
+extern void InitHashTable(S_HASHTABLE *table, int sizeInMb);
+extern void ClearHashTable(S_HASHTABLE *table);
 // evaluate.c
 extern int EvalPosition(const S_BOARD *pos);
+extern int Mirror64[64];
 
 // uci.c
 extern void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info);
@@ -291,5 +339,11 @@ extern void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info);
 // xboard.c
 extern void XBOARD_Loop(S_BOARD *pos, S_SEARCHINFO *info);
 extern void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info);
+
+// polybook.c
+// extern U64 PolyKeyFromBoard(const S_BOARD *board);
+extern void InitPolyBook();
+extern void ClearPolyBook();
+extern int GetBookMove(S_BOARD *board);
 
 #endif

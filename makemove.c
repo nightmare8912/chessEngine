@@ -311,3 +311,46 @@ int MakeMove(S_BOARD *pos, int move) {
     }
     return TRUE;
 }
+
+void TakeNullMove(S_BOARD *pos) {
+    ASSERT(CheckBoard(pos));
+
+    pos->histPly--;
+    pos->ply--;
+
+    if (pos->enPas != NO_SQ) HASH_EP;
+
+    pos->castlePerm = pos->history[pos->histPly].castlePerm;
+    pos->fiftyMove = pos->history[pos->histPly].fiftyMove;
+    pos->enPas = pos->history[pos->histPly].enPas;
+
+    if (pos->enPas != NO_SQ) HASH_EP;
+    pos->side ^= 1;
+    HASH_SIDE;
+
+    ASSERT(CheckBoard(pos));
+}
+
+void MakeNullMove(S_BOARD *pos) {
+    ASSERT(CheckBoard(pos));
+    ASSERT(!INCHECK());
+
+    pos->ply++;
+    pos->history[pos->histPly].posKey = pos->posKey;
+
+    if (pos->enPas != NO_SQ) HASH_EP;
+
+    pos->history[pos->histPly].move = NOMOVE;
+    pos->history[pos->histPly].fiftyMove = pos->fiftyMove;
+    pos->history[pos->histPly].enPas = pos->enPas;
+    pos->history[pos->histPly].castlePerm = pos->castlePerm;
+
+    pos->enPas = NO_SQ;
+    pos->side ^= 1;
+    pos->histPly++;
+    HASH_SIDE;
+
+    ASSERT(CheckBoard(pos));
+
+    return;
+}

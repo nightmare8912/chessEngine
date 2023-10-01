@@ -8,7 +8,7 @@ long leafNodes;
 
 void Perft(int depth, S_BOARD *pos)
 {
-
+    // printf("hi");
     ASSERT(CheckBoard(pos));
 
     if (depth == 0)

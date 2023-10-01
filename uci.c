@@ -67,7 +67,7 @@ void ParseGo(char *line, S_SEARCHINFO *info, S_BOARD *pos)
     {
         info->timeSet = TRUE;
         time /= movestogo;
-        time -= 50; // we're keeping a margin of 50ms just to make sure that we don't overrun on time and stay behing prescribed time!
+        // time -= 50; // we're keeping a margin of 50ms just to make sure that we don't overrun on time and stay behing prescribed time!
         info->stopTime = info->startTime + time + inc;
     }
 
@@ -130,6 +130,7 @@ void ParsePosition(char *lineIn, S_BOARD *pos)
 void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info)
 {
     info->GAME_MODE = UCIMODE;
+    int sizeInMb = 16;
     
     setbuf(stdin, NULL);
     setbuf(stdout, NULL);
@@ -182,6 +183,27 @@ void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info)
             printf("id author PRATYUSH\n");
             printf("uciok\n");
         }
+        else if(!strncmp(line, "debug", 4)) {
+            DebugAnalysisTest(pos, info);
+            break;
+        }
+        else if (!strncmp(line, "set option name Hash value ", 26)) {
+            sscanf(line, "%*s %*s %*s %*s %d", &sizeInMb);
+            if (sizeInMb < 4) sizeInMb = 4;
+            printf("Set hash to: %d MB\n", sizeInMb);
+            InitHashTable(pos->HashTable, sizeInMb);
+        }
+        else if (!strncmp(line, "setoption name Book value ", 26)) {
+            char *ptrTrue = NULL;
+            ptrTrue = strstr(line, "true");
+            if (ptrTrue != NULL) {
+               EngineOptions->UseBook = TRUE;
+            }
+            else {
+                EngineOptions->UseBook = FALSE;
+            }
+        }
+        
         if (info->quit)
             break;
     }

@@ -64,6 +64,8 @@ U64 IsolatedMask[64];
 
 */
 
+S_OPTIONS EngineOptions[1];
+
 // this function sets up the rows and columns of bitboards to 1's so that we can use them to detect passed pawns at a later stage
 void InitEvalMasks() {
 	
@@ -82,12 +84,61 @@ void InitEvalMasks() {
 		}
 	}
 
-	// for (r = RANK_8; r >= RANK_1; r--) {
-	// 	PrintBitBoard(RankBBMask[r]);
-	// }
+	for (sq = 0; sq < 64; sq++) {
+		IsolatedMask[sq] = 0ULL;
+		WhitePassedMask[sq] = 0ULL;
+		BlackPassedMask[sq] = 0ULL;
+	}
 
-	// for (f = FILE_A; f <= FILE_H; f++) {
-	// 	PrintBitBoard(FileBBMask[f]);
+	for (sq = 0; sq < 64; sq++) {
+		// incrementing by 8 -> (for white pawn) means staying in same file but incrementing the rank by 1
+		tsq = sq + 8;
+		while (tsq < 64) {
+			// setting all the positions ahead of the start square to x(1)
+			WhitePassedMask[sq] |= (1ULL << tsq);
+			tsq += 8;
+		}
+		// decrementing by 8 -> (for black pawn) means staying in same file but decrementing the rank by 1
+		tsq = sq - 8;
+		while (tsq >= 0) {
+			// setting all the positions ahead of the start square to x(1)
+			BlackPassedMask[sq] |= (1ULL << tsq);
+			tsq -= 8;
+		}
+
+		if (FilesBrd[SQ120(sq)] > FILE_A) {
+			IsolatedMask[sq] |= FileBBMask[FilesBrd[SQ120(sq)] - 1]; // self explanatory -> we just take the adjacent file and set it all to x
+
+			tsq = sq + 7; // incrementing by 7 means that we're going to the adjacent file
+			while (tsq < 64) {
+				WhitePassedMask[sq] |= (1ULL << tsq);
+				tsq += 8; // now since we're alredy on the adjacent file, we have to increment by 8 not 7 (as we want to stay on the same adjacent file, and not change the file anymore)
+			}
+
+			tsq = sq - 9;
+			while (tsq >= 0) {
+				BlackPassedMask[sq] |= (1ULL << tsq);	
+				tsq -= 8;
+			}
+		}
+
+		if (FilesBrd[SQ120(sq)] < FILE_H) {
+			IsolatedMask[sq] |= FileBBMask[FilesBrd[SQ120(sq)] + 1];
+			tsq = sq + 9; // incrementing by 9 means that we're going to the adjacent file
+			while (tsq < 64) {
+				WhitePassedMask[sq] |= (1ULL << tsq);
+				tsq += 8; // now since we're alredy on the adjacent file, we have to increment by 8 not 7 (as we want to stay on the same adjacent file, and not change the file anymore)
+			}
+
+			tsq = sq - 7;
+			while (tsq >= 0) {
+				BlackPassedMask[sq] |= (1ULL << tsq);
+				tsq -= 8;
+			}
+		}
+	}
+	// for (sq = 0; sq < 64; ++sq) {
+	// 	PrintBitBoard(IsolatedMask[sq]);
 	// }
 }
 
@@ -185,4 +236,5 @@ void AllInit()
 	InitFilesRanksBrd();
 	InitEvalMasks();
 	InitMvvLva();
+	InitPolyBook();
 }
