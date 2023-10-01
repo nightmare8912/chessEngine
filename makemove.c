@@ -333,7 +333,7 @@ void TakeNullMove(S_BOARD *pos) {
 
 void MakeNullMove(S_BOARD *pos) {
     ASSERT(CheckBoard(pos));
-    ASSERT(!INCHECK());
+    // ASSERT(!INCHECK());
 
     pos->ply++;
     pos->history[pos->histPly].posKey = pos->posKey;

@@ -62,3 +62,5 @@ void ReadInput(S_SEARCHINFO *info) {
 		return;
     }
 }
+
+

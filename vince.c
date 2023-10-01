@@ -11,8 +11,8 @@ int main(int argc, char *argv[])
     S_SEARCHINFO info[1];
     // InitPvTable(pos->PvTable);
 	info->quit = FALSE;
-	pos->HashTable->pTable = NULL;
-	InitHashTable(pos->HashTable, 16);
+	HashTable->pTable = NULL;
+	InitHashTable(HashTable, 16);
 
 	printf("Welcome to Vince! Type 'vince' for console mode\n\n");
 	char line[256];
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 	}
 
 	// free(pos->PvTable->pTable);
-	free(pos->HashTable->pTable);
+	free(HashTable->pTable);
 	ClearPolyBook();
     return 0;
 }

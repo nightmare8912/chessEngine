@@ -161,7 +161,7 @@ void XBOARD_Loop(S_BOARD *pos, S_SEARCHINFO *info)
 
             printf("time:%d start:%d stop:%d depth:%d timeSet:%d movestogo:%d mps:%d\n",
                    time, info->startTime, info->stopTime, info->depth, info->timeSet, movestogo[pos->side], mps);
-            SearchPosition(pos, info);
+            SearchPosition(pos, info, HashTable);
 
             if (mps != 0)
             {
@@ -228,7 +228,7 @@ void XBOARD_Loop(S_BOARD *pos, S_SEARCHINFO *info)
         	sscanf(inBuf, "memory %d", &sizeInMb);
             if(sizeInMb < 4) sizeInMb = 4;
         	printf("Set Hash to %d Mb\n",sizeInMb);
-        	InitHashTable(pos->HashTable, sizeInMb);
+        	InitHashTable(HashTable, sizeInMb);
         	continue;
         }
 
@@ -265,7 +265,7 @@ void XBOARD_Loop(S_BOARD *pos, S_SEARCHINFO *info)
 
         if (!strcmp(command, "new"))
         {
-            ClearHashTable(pos->HashTable);
+            ClearHashTable(HashTable);
             engineSide = BLACK;
             ParseFen(START_FEN, pos);
             depth = -1;
@@ -338,7 +338,7 @@ void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info)
                 info->stopTime = info->startTime + movetime;
             }
 
-            SearchPosition(pos, info);
+            SearchPosition(pos, info, HashTable);
         }
 
         printf("\nVince > ");
@@ -447,6 +447,12 @@ void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info)
                 printf(" movetime %ds\n", movetime / 1000);
             else
                 printf(" movetime not set\n");
+            if (EngineOptions->UseBook == TRUE) {
+                printf("Use book enabled\n");
+            }
+            else {
+                printf("Book not allowed\n");
+            }
 
             continue;
         }
@@ -468,7 +474,7 @@ void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info)
 
         if (!strcmp(command, "new"))
         {
-            ClearHashTable(pos->HashTable);
+            ClearHashTable(HashTable);
             engineSide = BLACK;
             ParseFen(START_FEN, pos);
             continue;

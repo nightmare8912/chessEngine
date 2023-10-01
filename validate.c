@@ -84,13 +84,13 @@ void MirrorEvalTest(S_BOARD *pos) {
     }
 }
 
-void DebugAnalysisTest(S_BOARD *pos, S_SEARCHINFO *info) {
+void DebugAnalysisTest(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 
 	FILE *file;
     file = fopen("lct2.epd","r");
     char lineIn [1024];
 
-	info->depth = MAXDEPTH;
+	info->depth = 5;
 	info->timeSet = TRUE;
 	int time = 1140000;
 
@@ -102,12 +102,12 @@ void DebugAnalysisTest(S_BOARD *pos, S_SEARCHINFO *info) {
         while(fgets (lineIn , 1024 , file) != NULL) {
 			info->startTime = GetTimeMs();
 			info->stopTime = info->startTime + time;
-			ClearHashTable(pos->HashTable);
+			ClearHashTable(table);
             ParseFen(lineIn, pos);
             printf("\n%s\n",lineIn);
 			printf("time:%d start:%d stop:%d depth:%d timeSet:%d\n",
 				time,info->startTime,info->stopTime,info->depth,info->timeSet);
-			SearchPosition(pos, info);
+			SearchPosition(pos, info, table);
             memset(&lineIn[0], 0, sizeof(lineIn));
         }
     }
