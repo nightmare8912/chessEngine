@@ -4,7 +4,7 @@ Type=0
 CurrSwissRound=0
 Rounds=100
 CurrentPair=1
-CurrentRound=2
+CurrentRound=6
 Level=5 -1\1/-1#1@-1|1
 [Options]
 QuitAfterTournament=0
@@ -58,7 +58,7 @@ FCHnames=
 [Data]
 LastPGNEPDindex=1
 LastGameDate=2023.10.02
-LastGameTime=01:59:03
+LastGameTime=15:58:50
 Country=India
 Site=PRATYUSH
 Hardware=AMD Ryzen 5 5500U with Radeon Graphics with 7.4 GB Memory
@@ -66,12 +66,10 @@ OS=Windows 10 Home Home Edition (Build 9200) 64 bit
 Website=
 E-Mail=
 ArenaVersion=Arena 3.5.1
-FirstGameDate=2023.10.01
-FirstGameTime=19:17:00
+FirstGameDate=2023.10.02
+FirstGameTime=15:22:47
 [PairingResults]
-Vince ------ Vince2=00?
-Vince12 ------ Vince2=?
-Vince ------ VinceThreaded12=?
+Tscp181 ------ Vince12=100001?
 [Participants]
-Engine1=VinceThreaded12
-Engine2=Vince
+Engine1=Tscp181
+Engine2=Vince12

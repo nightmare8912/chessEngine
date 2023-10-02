@@ -3,30 +3,11 @@
 #include <stdio.h>
 #include <string.h>
 #include "defs.h"
+#include "threading.h"
 #include "tinycthread.h"
 #include "sample_fens.h"
 
 #define INPUTBUFFER 400 * 6
-
-thrd_t mainSearchThread;
-
-thrd_t LaunchSearchThread(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
-    S_SEARCH_THREAD_DATA *pSearchData = malloc(sizeof(S_SEARCH_THREAD_DATA));
-
-    pSearchData->originalPosition = pos;
-    pSearchData->info = info;
-    pSearchData->ttable = table;
-
-    thrd_t th;
-    thrd_create(&th, &SearchPositionThread, (void *)pSearchData);
-
-    return th;
-}
-
-void JoinSearchThread(S_SEARCHINFO *info) {
-    info->stopped = TRUE;
-    thrd_join (mainSearchThread, NULL);
-}
 
 void ParseGo(char *line, S_SEARCHINFO *info, S_BOARD *pos, S_HASHTABLE *table)
 {
@@ -150,7 +131,7 @@ void ParsePosition(char *lineIn, S_BOARD *pos)
     PrintBoard(pos);
 }
 
-void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info)
+void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table)
 {
     info->GAME_MODE = UCIMODE;
     int sizeInMb = 16;
@@ -189,17 +170,17 @@ void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info)
         }
         else if (!strncmp(line, "ucinewgame", 10))
         {
-            ClearHashTable(HashTable);
+            ClearHashTable(table);
             ParsePosition("position startpos\n", pos);
         }
         else if (!strncmp(line, "go", 2))
         {
-            ParseGo(line, info, pos, HashTable);
+            ParseGo(line, info, pos, table);
         }
         else if (!strncmp(line, "run", 3))
         {
             ParseFen(FEN18, pos);
-            ParseGo("go infinite", info, pos, HashTable);
+            ParseGo("go infinite", info, pos, table);
         }
         else if (!strncmp(line, "quit", 4))
         {
@@ -218,14 +199,14 @@ void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info)
             printf("uciok\n");
         }
         else if(!strncmp(line, "debug", 4)) {
-            DebugAnalysisTest(pos, info, HashTable);
+            DebugAnalysisTest(pos, info, table);
             break;
         }
         else if (!strncmp(line, "set option name Hash value ", 26)) {
             sscanf(line, "%*s %*s %*s %*s %d", &sizeInMb);
             if (sizeInMb < 4) sizeInMb = 4;
             printf("Set hash to: %d MB\n", sizeInMb);
-            InitHashTable(HashTable, sizeInMb);
+            InitHashTable(table, sizeInMb);
         }
         else if (!strncmp(line, "setoption name Book value ", 26)) {
             char *ptrTrue = NULL;

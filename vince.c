@@ -42,17 +42,17 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		if (!strncmp(line, "uci", 3)) {
-			Uci_Loop(pos, info);
+			Uci_Loop(pos, info, HashTable);
 			if (info->quit == TRUE) break;
 			continue;
 		}
-		// else if (!strncmp(line, "xboard", 6)) {
-		// 	XBOARD_Loop(pos, info);
-		// 	if (info->quit == TRUE) break;
-		// 	continue;
-		// }
+		else if (!strncmp(line, "xboard", 6)) {
+			XBOARD_Loop(pos, info, HashTable);
+			if (info->quit == TRUE) break;
+			continue;
+		}
 		else if (!strncmp(line, "vince", 5)) {
-			Console_Loop(pos, info);
+			Console_Loop(pos, info, HashTable);
 			if (info->quit == TRUE) break;
 			continue;
 		}

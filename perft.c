@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "threading.h"
+
 long leafNodes;
 
 void Perft(int depth, S_BOARD *pos)
@@ -66,4 +68,25 @@ void PerftTest(int depth, S_BOARD *pos)
     printf("\nTest Complete : %ld nodes visited in: %d ms \n", leafNodes, GetTimeMs() - start);
 
     return;
+}
+
+typedef struct {
+    S_BOARD *pos;
+    int currDepth;
+} perft_multi;
+
+void PerftMultiThread(S_BOARD *pos, int currDepth) {
+
+}
+
+void PerftTestMultiThread(S_BOARD *pos, int depth)
+{
+    int totalMoves = 0;
+    S_MOVELIST list[1];
+    GenerateAllMoves(pos, list);
+    thrd_t perftThreads[list->count];
+
+    for (int MoveNum = 0; MoveNum < list->count; MoveNum++) {
+
+    }    
 }

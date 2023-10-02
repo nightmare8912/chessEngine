@@ -344,12 +344,13 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 int SearchPositionThread(void *data) {
 	S_SEARCH_THREAD_DATA *searchData = (S_SEARCH_THREAD_DATA *) data;
-	S_BOARD *pos = malloc(sizeof(S_BOARD));
-	memcpy(pos, searchData->originalPosition, sizeof(S_BOARD));
+	// S_BOARD *pos = malloc(sizeof(S_BOARD));
+	S_BOARD *pos = searchData->originalPosition;
+	// memcpy(pos, searchData->originalPosition, sizeof(S_BOARD));
 	// we need a complete new copy of the board as each of the thread will be manipulating the board differently
 	// whereas info and HashTable will be the same for all of them
 	SearchPositionMultiThreading(pos, searchData->info, searchData->ttable);
-	free(pos);
+	// free(pos);
 	// printf("Freed!\n");
 	return 0;
 }
@@ -377,16 +378,33 @@ void IterativeDeepen(S_SEARCH_WORKER_DATA *workerData) {
 			pvMoves = GetPvLine(currentDepth, workerData->pos, workerData->ttable);
 			workerData->bestMove = workerData->pos->PvArray[0];
 
-			printf("info score cp %d depth %d nodes %ld time %d ", 
-			bestScore, currentDepth, workerData->info->nodes, GetTimeMs() - workerData->info->startTime);
-
-			printf("pv");
-			for (pvNum = 0; pvNum < pvMoves; ++pvNum)
+			if (workerData->info->GAME_MODE == UCIMODE)
 			{
-				printf(" %s", PrMove(workerData->pos->PvArray[pvNum]));
+				printf("info score cp %d depth %d nodes %ld time %d ",
+					   bestScore, currentDepth, workerData->info->nodes, GetTimeMs() - workerData->info->startTime);
 			}
-			printf("\n");
-			printf("Ordering: %.2f\n", (workerData->info->fhf / workerData->info->fh));
+			else if (workerData->info->GAME_MODE == XBOARDMODE && workerData->info->POST_THINKING == TRUE)
+			{
+				printf("%d %d %d %ld ",
+					   currentDepth, bestScore, (GetTimeMs() - workerData->info->startTime) / 10, workerData->info->nodes);
+			}
+			else if (workerData->info->POST_THINKING == TRUE)
+			{
+				printf("score:%d depth:%d nodes:%ld time:%d(ms) ",
+					   bestScore, currentDepth, workerData->info->nodes, GetTimeMs() - workerData->info->startTime);
+			}
+			if (workerData->info->GAME_MODE == UCIMODE || workerData->info->POST_THINKING == TRUE)
+			{
+				if (!workerData->info->GAME_MODE == XBOARDMODE)
+				{
+					printf("pv");
+				}
+				for (pvNum = 0; pvNum < pvMoves; ++pvNum)
+				{
+					printf(" %s", PrMove(workerData->pos->PvArray[pvNum]));
+				}
+				printf("\n");
+			}
 		}		
 	}
 }
@@ -401,17 +419,17 @@ int StartWorkerThread(void *data) {
 			{
 				printf("bestmove %s\n", PrMove(workerData->bestMove));
 			}
-			// else if (workerData->info->GAME_MODE == XBOARDMODE)
-			// {
-			// 	printf("move %s\n", PrMove(workerData->bestMove));
-			// 	MakeMove(pos, bestMove);
-			// }
-			// else
-			// {
-			// 	printf("\n\n***!!Vince makes move %s !!***\n\n", PrMove(bestMove));
-			// 	MakeMove(pos, bestMove);
-			// 	PrintBoard(pos);
-			// }
+			else if (workerData->info->GAME_MODE == XBOARDMODE)
+			{
+				printf("move %s\n", PrMove(workerData->bestMove));
+				MakeMove(workerData->globalPos, workerData->bestMove);
+			}
+			else
+			{
+				printf("\n\n***!!Vince makes move %s using search!!***\n\n", PrMove(workerData->bestMove));
+				MakeMove(workerData->globalPos, workerData->bestMove);
+				PrintBoard(workerData->globalPos);
+			}
 	}
 	free(workerData);
 }
@@ -422,13 +440,14 @@ void SetUpWorker(int threadNum, thrd_t *workerTh, S_BOARD *pos, S_SEARCHINFO *in
 	memcpy(pWorkerData->pos, pos, sizeof(S_BOARD));
 	pWorkerData->info = info;
 	pWorkerData->ttable = table;
+	pWorkerData->globalPos = pos;
 	pWorkerData->threadNumber = threadNum;
 	thrd_create(workerTh, &StartWorkerThread, (void *)pWorkerData);
 }
 
 void CreateSearchWorkers(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 	
-	printf("Create search workers: %d\n", info->threadNum);
+	// printf("Create search workers: %d\n", info->threadNum);
 	for (int i = 0; i < info->threadNum; ++i) {
 		SetUpWorker(i, &workerThreads[i], pos, info, table);
 	}
@@ -441,6 +460,24 @@ void SearchPositionMultiThreading(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE 
 
 	if (EngineOptions->UseBook == TRUE) {
 		bestMove = GetBookMove(pos);
+		if (bestMove != NOMOVE) {
+			if (info->GAME_MODE == UCIMODE)
+			{
+				printf("bestmove %s\n", PrMove(bestMove));
+			}
+			else if (info->GAME_MODE == XBOARDMODE)
+			{
+				printf("move %s\n", PrMove(bestMove));
+				MakeMove(pos, bestMove);
+			}
+			else
+			{
+				printf("\n\n***!!Vince makes move %s using book!!***\n\n", PrMove(bestMove));
+				MakeMove(pos, bestMove);
+				PrintBoard(pos);
+			}
+			return;
+		}
 	}
 
 	if (bestMove == NOMOVE) {

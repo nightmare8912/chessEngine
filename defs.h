@@ -239,6 +239,7 @@ typedef struct
 
 typedef struct {
 	S_BOARD *pos;
+	S_BOARD *globalPos;
 	S_SEARCHINFO *info;
 	S_HASHTABLE *ttable;
 
@@ -378,6 +379,7 @@ extern void PerftTest(int depth, S_BOARD *pos);
 // search.c
 extern void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table);
 extern int SearchPositionThread(void *data);
+extern void SearchPositionMultiThreading(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table);
 // extern int IsRepitition(const S_BOARD *pos);
 
 // misc.c
@@ -403,11 +405,11 @@ extern int EvalPosition(const S_BOARD *pos);
 extern int Mirror64[64];
 
 // uci.c
-extern void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info);
+extern void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table);
 
 // xboard.c
-extern void XBOARD_Loop(S_BOARD *pos, S_SEARCHINFO *info);
-extern void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info);
+extern void XBOARD_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table);
+extern void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table);
 
 // polybook.c
 extern void InitPolyBook();

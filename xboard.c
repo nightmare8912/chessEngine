@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "defs.h"
+#include "threading.h"
+#include "tinycthread.h"
+#include "sample_fens.h"
 
 // new -> new game
 // sd 8 -> depth 8
@@ -112,7 +115,7 @@ void PrintOptions()
     printf("feature done=1\n");
 }
 
-void XBOARD_Loop(S_BOARD *pos, S_SEARCHINFO *info)
+void XBOARD_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table)
 {
 
     info->GAME_MODE = XBOARDMODE;
@@ -150,7 +153,6 @@ void XBOARD_Loop(S_BOARD *pos, S_SEARCHINFO *info)
             {
                 info->timeSet = TRUE;
                 time /= movestogo[pos->side];
-                // time -= 50;
                 info->stopTime = info->startTime + time + inc;
             }
 
@@ -161,7 +163,7 @@ void XBOARD_Loop(S_BOARD *pos, S_SEARCHINFO *info)
 
             printf("time:%d start:%d stop:%d depth:%d timeSet:%d movestogo:%d mps:%d\n",
                    time, info->startTime, info->stopTime, info->depth, info->timeSet, movestogo[pos->side], mps);
-            SearchPosition(pos, info, HashTable);
+             mainSearchThread = LaunchSearchThread(pos, info, table);
 
             if (mps != 0)
             {
@@ -302,7 +304,7 @@ void XBOARD_Loop(S_BOARD *pos, S_SEARCHINFO *info)
     }
 }
 
-void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info)
+void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table)
 {
     printf("Welcome to Vice In Console Mode!\n");
     printf("Type help for commands\n\n");
@@ -318,6 +320,7 @@ void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info)
     char inBuf[80], command[80];
     int perftDepth = 5;
     char *perftOn;
+    int bookAllowed;
 
     engineSide = BLACK;
     ParseFen(START_FEN, pos);
@@ -338,7 +341,7 @@ void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info)
                 info->stopTime = info->startTime + movetime;
             }
 
-            SearchPosition(pos, info, HashTable);
+            mainSearchThread = LaunchSearchThread(pos, info, table);
         }
 
         printf("\nVince > ");
@@ -453,6 +456,7 @@ void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info)
             else {
                 printf("Book not allowed\n");
             }
+            printf("Threads in use: %d\n", info->threadNum);
 
             continue;
         }
@@ -492,6 +496,25 @@ void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info)
         }
         if (!strcmp(command, "perftdepth")) {
             sscanf(inBuf, "perftdepth %d", &perftDepth);
+            continue;
+        }
+
+        if (!strcmp(command, "thread")) {
+
+            sscanf(inBuf, "thread %d", &info->threadNum);
+            continue;
+        }
+
+        if (!strcmp(command, "usebook")) {
+
+            sscanf(inBuf, "usebook %d", &bookAllowed);
+
+            if (bookAllowed == 1) {
+                EngineOptions->UseBook = TRUE;
+            }
+            else if (bookAllowed == 0){
+                EngineOptions->UseBook = FALSE;
+            }
             continue;
         }
 

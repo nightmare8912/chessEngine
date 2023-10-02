@@ -13,7 +13,18 @@ const int BishopPair = 30;
 
 #define ENDGAME_MAT (1 * PieceVal[wR] + 2 * PieceVal[wN] + 2 * PieceVal[wP]) // if we have less than this value of materials then we may be in an endgame
 
-const int PawnTable[64] = {
+const int PawnTableO[64] = {
+    0, 0, 0, 0, 0, 0, 0, 0,
+    10, 10, 0, -10, -10, 0, 10, 10,
+    5, 0, 0, 5, 5, 0, 0, 5,
+    0, 0, 10, 20, 20, 10, 0, 0,
+    5, 5, 5, 10, 10, 5, 5, 5,
+    10, 10, 10, 20, 20, 10, 10, 10,
+    20, 20, 20, 30, 30, 20, 20, 20,
+    0, 0, 0, 0, 0, 0, 0, 0};
+
+
+const int PawnTableE[64] = {
     0, 0, 0, 0, 0, 0, 0, 0,
     10, 10, 0, -10, -10, 0, 10, 10,
     5, 0, 0, 5, 5, 0, 0, 5,
@@ -150,7 +161,7 @@ int EvalPosition(const S_BOARD *pos)
 		sq = pos->pList[pce][pceNum];
 		ASSERT(SqOnBoard(sq));
 		ASSERT(SQ64(sq) >= 0 && SQ64(sq) <= 63);
-		score += PawnTable[SQ64(sq)];
+		score += PawnTableO[SQ64(sq)];
 
 		if ((IsolatedMask[SQ64(sq)] & pos->pawns[WHITE]) == 0)
 		{
@@ -171,7 +182,7 @@ int EvalPosition(const S_BOARD *pos)
 		sq = pos->pList[pce][pceNum];
 		ASSERT(SqOnBoard(sq));
 		ASSERT(MIRROR64(SQ64(sq)) >= 0 && MIRROR64(SQ64(sq)) <= 63);
-		score -= PawnTable[MIRROR64(SQ64(sq))];
+		score -= PawnTableO[MIRROR64(SQ64(sq))];
 
 		if ((IsolatedMask[SQ64(sq)] & pos->pawns[BLACK]) == 0)
 		{
@@ -336,183 +347,3 @@ int EvalPosition(const S_BOARD *pos)
 		return -score;
 	}
 }
-
-
-// int EvalPosition(const S_BOARD *pos)
-// {
-//     int pce;
-//     int pceNum;
-//     int sq;
-//     int score = pos->material[WHITE] - pos->material[BLACK];
-
-//     pce = wP;
-
-//     if (pos->pceNum[wP] && !pos->pceNum[bP] && MaterialDraw(pos) == TRUE) {
-//         return 0;
-//     }
-
-//     for (pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum)
-//     {
-//         sq = pos->pList[pce][pceNum];
-//         ASSERT(SqOnBoard(sq));
-//         score += PawnTable[SQ64(sq)];
-
-//         if ((IsolatedMask[SQ64(sq)] & pos->pawns[WHITE]) == 0)
-//         {
-//             score += PawnIsolated;
-//         }
-
-//         if ((WhitePassedMask[SQ64(sq)] & pos->pawns[BLACK]) == 0)
-//         {
-//             score += PawnPassed[RanksBrd[sq]];
-//         }
-//     }
-
-//     pce = bP;
-//     for (pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum)
-//     {
-//         sq = pos->pList[pce][pceNum];
-//         ASSERT(SqOnBoard(sq));
-//         score -= PawnTable[MIRROR64(SQ64(sq))];
-
-//         if ((IsolatedMask[SQ64(sq)] & pos->pawns[BLACK]) == 0)
-//         {
-//             // printf("bP isolated: %s\n", PrSq(sq));
-//             score -= PawnIsolated;
-//         }
-
-//         if ((BlackPassedMask[SQ64(sq)] & pos->pawns[WHITE]) == 0)
-//         {
-//             // printf("bP passed: %s\n", PrSq(sq));
-//             score -= PawnPassed[7 - RanksBrd[sq]];
-//         }
-//     }
-
-//     pce = wN;
-//     for (pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum)
-//     {
-//         sq = pos->pList[pce][pceNum];
-//         ASSERT(SqOnBoard(sq));
-//         score += KnightTable[SQ64(sq)];
-//     }
-
-//     pce = bN;
-//     for (pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum)
-//     {
-//         sq = pos->pList[pce][pceNum];
-//         ASSERT(SqOnBoard(sq));
-//         score -= KnightTable[MIRROR64(SQ64(sq))];
-//     }
-
-//     pce = wB;
-//     for (pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum)
-//     {
-//         sq = pos->pList[pce][pceNum];
-//         ASSERT(SqOnBoard(sq));
-//         score += BishopTable[SQ64(sq)];
-//     }
-
-//     pce = bB;
-//     for (pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum)
-//     {
-//         sq = pos->pList[pce][pceNum];
-//         ASSERT(SqOnBoard(sq));
-//         score -= BishopTable[MIRROR64(SQ64(sq))];
-//     }
-
-//     pce = wR;
-//     for (pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum)
-//     {
-//         sq = pos->pList[pce][pceNum];
-//         ASSERT(SqOnBoard(sq));
-//         score += RookTable[SQ64(sq)];
-//         if (!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]]))
-//         {
-//             score += RookOpenFile;
-//         }
-//         else if (!(pos->pawns[WHITE] /*when we dont have any of our own pawns*/ & FileBBMask[FilesBrd[sq]]))
-//         {
-//             score += RookSemiOpenFile;
-//         }
-//     }
-
-//     pce = bR;
-//     for (pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum)
-//     {
-//         sq = pos->pList[pce][pceNum];
-//         ASSERT(SqOnBoard(sq));
-//         score -= RookTable[MIRROR64(SQ64(sq))];
-//         if (!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]]))
-//         {
-//             score -= RookOpenFile;
-//         }
-//         else if (!(pos->pawns[BLACK] /*when we dont have any of our own pawns*/ & FileBBMask[FilesBrd[sq]]))
-//         {
-//             score -= RookSemiOpenFile;
-//         }
-//     }
-
-//     pce = wQ;
-//     for (pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum)
-//     {
-//         sq = pos->pList[pce][pceNum];
-//         ASSERT(SqOnBoard(sq));
-//         if (!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]]))
-//         {
-//             score += QueenOpenFile;
-//         }
-//         else if (!(pos->pawns[WHITE] /*when we dont have any of our own pawns*/ & FileBBMask[FilesBrd[sq]]))
-//         {
-//             score += QueenSemiOpenFile;
-//         }
-//     }
-
-//     pce = bQ;
-//     for (pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum)
-//     {
-//         sq = pos->pList[pce][pceNum];
-//         ASSERT(SqOnBoard(sq));
-//         if (!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]]))
-//         {
-//             score -= QueenOpenFile;
-//         }
-//         else if (!(pos->pawns[BLACK] /*when we dont have any of our own pawns*/ & FileBBMask[FilesBrd[sq]]))
-//         {
-//             score -= QueenSemiOpenFile;
-//         }
-//     }
-
-//     pce = wK;
-//     sq = pos->pList[pce][0];
-
-//     if ((pos->material[BLACK] <= ENDGAME_MAT)) {
-//         // if no black queen on board and less materials
-//         score += KingE[SQ64(sq)];
-//     }
-//     else {
-//         score += KingO[SQ64(sq)];
-//     }
-
-//     pce = bK;
-//     sq = pos->pList[pce][0];
-
-//     if ((pos->material[WHITE] <= ENDGAME_MAT)) {
-//         // if no white queen on board and less materials
-//         score -= KingE[MIRROR64(SQ64(sq))];
-//     }
-//     else {
-//         score -= KingO[MIRROR64(SQ64(sq))];
-//     }
-
-//     if (pos->pceNum[wB] >= 2) score += BishopPair;
-//     if (pos->pceNum[bB] >= 2) score -= BishopPair;
-
-//     if (pos->side == WHITE)
-//     {
-//         return score;
-//     }
-//     else
-//     {
-//         return -score;
-//     }
-// }
